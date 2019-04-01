@@ -1,0 +1,47 @@
+#!/usr/bin/env expect
+
+proc findBrokerfile {} {
+    set d [pwd]
+    while {![file exists "$d/brokerfile.tcl"] && $d != "/"} {
+        set d [file dirname $d]
+    }
+    if {[file exists "$d/brokerfile.tcl"]} {
+        return "$d/brokerfile.tcl"
+    }
+    return "~/brokerfile.tcl"
+}
+
+set tasks {}
+
+proc task {name func {desc ""}} {
+    global tasks
+    dict set tasks $name func $func
+    dict set tasks $name desc $desc
+}
+
+proc printUsage {} {
+    puts "Availabe command:"
+    global tasks
+    dict for {name info} $tasks {
+        set desc [dict get $info desc]
+        if {$desc != ""} {
+            puts "$name -- $desc"
+        } else {
+            puts $name
+        }
+        
+    }
+}
+
+set brokerfile [findBrokerfile]
+cd [file dirname $brokerfile]
+source $brokerfile
+
+if {$argc < 1} {
+    printUsage
+    exit
+}
+
+set subcmd [lindex $argv 0]
+set argv [lreplace $argv 0 0]
+eval [dict get $tasks $subcmd func]
